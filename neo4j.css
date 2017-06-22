@@ -1,0 +1,120 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+body{
+    font-size: 12px;
+    font-family: Open Sans,Helvetica,Arial,sans-serif;
+    line-height: 1;
+    overflow: hidden;
+    position: fixed;
+    background:#18202a;
+}
+main,#canvasArea{
+	position:relative;
+}
+main{
+	height: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+}
+/*绘图区*/
+#canvasArea{
+	width:78%;
+	position:absolute;
+	right:0;
+	margin-left:120px;
+}
+#canvasArea #graph, #canvasArea svg {
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 0;
+}
+#canvasArea #graph {
+    margin: 0 0 2px;
+    background-color: #ecf0f1;
+    width: 100%;
+}
+#collapse{
+	position:absolute;
+	right:0%;
+	top:50%;
+	width:20px;
+	height:30px;
+	background:#000;
+	z-index:100;
+	line-height:2.4em;	
+	color:#fff;
+}
+#colOpen{
+	position:absolute;
+	right:0%;
+	top:50%;
+	width:20px;
+	height:30px;
+	background:#000;
+	z-index:100;
+	line-height:2.4em;	
+	color:#fff;
+	display:none;
+}
+/*属性区*/
+#detailsArea{
+	
+    color: #fff;
+    background:#18202a;
+    height: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-left: 1px solid #34495e;
+   
+}
+
+#detailsArea>h3{
+    display: block;
+    font-size:2em;
+    font-weight: bold;
+    background:#24323e;
+    height:30px;
+}
+#zoomChang{
+	bottom: 10px;
+	position: fixed;
+	right:0;
+	border-left: #e6e9ef solid 1px;
+    border-top: #e6e9ef solid 1px;
+    background: #fff;
+}
+.sizeCh{
+	display: list-item;
+    list-style-type: none;
+    font-size: 2em;
+    border: 1px solid transparent;
+    color: #9b9da2;
+    background: transparent;
+    padding: 2px 6px 3px;
+}
+#seaContainer{
+	width:260px;
+	margin-left:10px;
+}
+#detailMsg>ul>li{
+	list-style:none;
+	padding:5px 0;
+	font-size:16px;
+	margin-left:10px;
+}
+#MsgList>li span{
+	padding-right:10px;
+}
+.link{
+	fill:none;
+    stroke: #ccc;
+      stroke-width: 1px;
+}

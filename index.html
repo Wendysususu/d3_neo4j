@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>类neo4j页面制作</title>
+    <link rel="stylesheet" href="bootstrap.css">
+    <link rel="stylesheet" href="neo4j.css"/>
+</head>
+<body>
+<main>
+    <section id="canvasArea">
+        <!-- 绘图区 -->
+        <div id="graph"></div>
+        <div id="zoomChang">
+            <button class="sizeCh" id="zoomIn"><i class="glyphicon glyphicon-zoom-in" style="font-size: 40"></i></button>
+            <button class="sizeCh" id="zoomOut"><i class="glyphicon glyphicon-zoom-out" style="font-size: 40"></i></button>
+        </div>
+    </section>
+    <!-- 侧边栏 -->
+    <aside id="detailsArea">
+        <div id="collapse">
+            <<
+        </div>
+        <div id="colOpen">
+            >>
+        </div>
+        <div id="seaBox">
+            <h3>条件查询</h3>
+            <div id="seaContainer" class="input-group input-group-sm">
+                <input type="text" id="seaText" class="form-control" placeholder="请输入要查询的身份证号码"/>
+	                 <span class="input-group-btn">
+		                  <button class="btn btn-danger" type="button" id="btnSearch">
+                              搜索
+                          </button>
+	                 </span>
+            </div>
+            <h3>详细信息</h3>
+            <div id="detailMsg">
+                <ul id="MsgList">
+                </ul>
+            </div>
+        </div>
+    </aside>
+
+</main>
+<script src="jquery-1.11.3.js"></script>
+<script src="d3.min.js"></script>
+<script type="text/javascript">
+//定义全局变量用于设置放大缩小值
+var i=1;
+window.onload=function(){
+    //  默认显示所有的信息
+    d3.json("relation.json",function(result){
+        console.log(result);
+        var result=result.obj;
+        new nodeRelation('body',{data:result});
+    });
+    $("#collapse").click(function(){
+        $("#detailsArea").animate({width:'20px'});
+        $("#colOpen").css("display","block");
+        $("#seaBox").css("display","none");
+        $(this).css("display","none");
+    });
+    $("#colOpen").click(function(){
+        $("#detailsArea").animate({width:'280px'});
+        $("#collapse").css("display","block");
+        $("#seaBox").css("display","block");
+        $(this).css("display","none");
+    });
+    $("#btnSearch").click(function(){
+        var seaText=$("#seaText").val();
+        d3.json("relation.json",function(result){
+            var result=result.obj;
+            $("#graph").empty();
+            new nodeRelation('body',{data:result});
+        });
+    });
+    //放大缩小图标
+    $(".sizeCh").click(function(){
+        $(".sizeCh").css("color","#9b9da2");
+        $(this).css("color","#000");
+    });
+    //单击放大图标
+
+    $("#zoomIn").click(function(){
+        if(i<=2)
+        {
+            i+=0.1;
+        }
+        d3.select(".all").attr("transform","scale("+i+")");
+    });
+    //单击缩小图标
+    $("#zoomOut").click(function(){
+        i-=0.1;
+        d3.select(".all").attr("transform","scale("+i+")");
+    });
+
+
+}
+//绘制图形
+function nodeRelation(wrapper,showData){
+    //数据初始化
+    var initData={
+        data:{"nodes":[],"links":[]},
+        width:1900,
+        height:800,
+        distance:300
+    };
+    //将要展示的数据与初始化数据按参数合并为 一个对象
+    $.extend(true,initData,showData);
+    initData.data.links.forEach(function (e) {
+        if(typeof e.source!="number"&&typeof e.target!="number") {
+            var sourceNode = initData.data.nodes.filter(function (n) {
+                        return n.id === e.source;
+                    })[0],
+                    targetNode = initData.data.nodes.filter(function (n) {
+                        return n.id === e.target;
+                    })[0];
+            e.source = sourceNode;
+            e.target = targetNode;
+        }
+    });
+    var _this=this;
+    var zoom = d3.behavior.zoom()
+            .scaleExtent([0.2,2])
+            .on("zoom",function(){
+                _this.zoomed();
+            });
+    this.vis = d3.select("#graph").append("svg:svg")
+            .attr("width", initData.width)
+            .attr("height", initData.height)
+            .call(zoom).on("dblclick.zoom", null);
+    this.vis=this.vis.append('g').attr('class','all')
+            .attr("width", initData.width)
+            .attr("height", initData.height);
+    this.force = d3.layout.force()
+            .nodes(initData.data.nodes)
+            .links(initData.data.links)
+        /*设置重力，向size()中心点运动*/
+            .gravity(0.1)
+            .distance(initData.distance)
+        /*设置电荷数，值越大，相互吸引力越大*/
+            .charge(function(d){
+                return (-400* d.index);
+            })
+            .size([initData.width,initData.height])
+            .alpha(1)
+            .start();
+    this.vis.append("svg:defs").selectAll("marker")
+            .data(["end"])
+            .enter().append("svg:marker")
+            .attr("id","arrow")
+            .attr('class','arrow')
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 40)
+            .attr("refY", -4)
+            .attr("markerWidth", 9)
+            .attr("markerHeight", 16)
+            .attr("markerUnits","userSpaceOnUse")
+            .attr("orient", "auto")
+            .append("svg:path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr('fill','#A5ABB6');
+    this.path=this.vis.selectAll("path.link")
+            .data(initData.data.links)
+            .enter().append("svg:path")
+            .attr("class","link")
+            .attr("marker-end", function(d) { return "url(#arrow)"; });
+
+    //节点拖拽函数
+    var dragstart=function(d, i) {
+        _this.force.stop();
+        d3.event.sourceEvent.stopPropagation();
+    };
+    var dragmove=function(d, i) {
+        d.px += d3.event.dx;
+        d.py += d3.event.dy;
+        d.x += d3.event.dx;
+        d.y += d3.event.dy;
+        _this.tick();
+    };
+    var dragend=function(d, i) {
+        d.fixed = true;
+        _this.tick();
+        _this.force.resume();
+    };
+    this.nodeDrag = d3.behavior.drag()
+            .on("dragstart", dragstart)
+            .on("drag", dragmove)
+            .on("dragend", dragend);
+    this.node = this.vis.selectAll("g.node")
+            .data(initData.data.nodes)
+            .enter().append("svg:g")
+            .attr("class", "node")
+            .call(_this.nodeDrag);
+    this.node.append("svg:circle")
+            .attr("cx", "0")
+            .attr("cx", "0")
+            .attr("r", "30px")
+            .attr("fill","#68BDF6")
+            .attr("stroke","#5CA8DB")
+            .on("mousemove",function(d){
+                d3.select(this).attr("fill","#f00");
+            })
+            .on("mouseout",function(d){
+                d3.select(this).attr("fill","#68BDF6");
+            })
+    ;
+    this.node.append("svg:text")
+            .attr("class", "nodetext")
+            .attr("dy", "4px")
+            .attr('text-anchor','middle')
+            .text(function(d) { return d.title; })
+            .attr('fill',"#000");
+    this.linetext=this.vis.selectAll('.linetext')
+            .data(initData.data.links)
+            .enter()
+            .append("text")
+            .attr("class", "linetext")
+            .attr('fill',"#000")
+            .append("textPath").attr('xlink:href',function(d){
+                var str="#"+d.source.id+d.target.id;
+                return str;
+            })
+            .attr("startOffset",function(d){ var dx = d.target.x -d.source.x;
+                return Math.abs(dx/2-d.relation.length);})
+            .text(function (d) {
+                return d.relation;
+            })
+            .call(this.force.drag);
+    this.zoomed=function(){
+        _this.vis.attr("transform","translate("+d3.event.translate+") scale("+i+")")
+    };
+    this.tick=function() {
+        _this.path.attr("d",function(d){
+            var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+        }).attr("id",function(d){return ""+d.source.id+d.target.id;});
+        _this.linetext.attr("startOffset", function(d) {
+            var dx = d.target.x -d.source.x;
+            return Math.abs(dx/2); });
+        _this.node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+    };
+    _this.force.on("tick", this.tick);
+}
+
+</script>
+</body>
+</html>
